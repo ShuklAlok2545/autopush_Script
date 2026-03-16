@@ -1,127 +1,6 @@
-# #!/bin/zsh
-
-# #this script take url as input and push all the content to  origin (Github)
-# set -u
-
-# print_error() {
-#     echo "\n[ERROR] $1\n"
-# }
-
-# print_info() {
-#     echo "\n[INFO] $1\n"
-# }
-
-# run_with_retry() {
-#     local cmd="$1"
-#     local exit_code
-
-#     while true; do
-#         print_info "Running: $cmd"
-#         eval "$cmd"
-#         exit_code=$?
-
-#         if [[ $exit_code -eq 0 ]]; then
-#             return 0
-#         else
-#             print_error "Command failed."
-
-#             echo "Enter a command to resolve the issue:"
-#             read fixcmd
-
-#             if [[ -n "$fixcmd" ]]; then
-#                 print_info "Running fix command: $fixcmd"
-#                 eval "$fixcmd"
-#             fi
-
-#             echo "Retrying original command..."
-#         fi
-#     done
-# }
-
-
-
-# if [[ ! -d ".git" ]]; then
-#     print_info "Initializing git repository..."
-#     run_with_retry "git init"
-# else
-#     print_info "Git repository already initialized."
-# fi
-
-
-
-# echo "Enter origin repository URL:"
-# read origin_url
-
-# if [[ -z "$origin_url" ]]; then
-#     print_error "Origin URL cannot be empty."
-#     exit 1
-# fi
-
-# if git remote | grep -q origin; then
-#     print_info "Origin already exists. Updating URL."
-#     run_with_retry "git remote set-url origin $origin_url"
-# else
-#     run_with_retry "git remote add origin $origin_url"
-# fi
-
-
-# run_with_retry "git add ."
-
-
-# echo "Enter commit message:"
-# read commit_msg
-
-# if [[ -z "$commit_msg" ]]; then
-#     commit_msg="Auto commit"
-# fi
-
-# run_with_retry "git commit -m \"$commit_msg\""
-
-
-
-
-# branch=$(git branch --show-current 2>/dev/null)
-
-# if [[ -z "$branch" ]]; then
-#     branch="main"
-#     print_info "No branch detected. Creating branch $branch"
-#     run_with_retry "git checkout -b $branch"
-# fi
-
-
-
-# while true; do
-#     print_info "Pushing to origin..."
-
-#     git push -u origin "$branch"
-#     status=$?
-
-#     if [[ $status -eq 0 ]]; then
-#         echo "\n=============================="
-#         echo "Push to origin successful"
-#         echo "=============================="
-#         exit 0
-#     else
-#         print_error "Push failed."
-
-#         echo "Enter command to resolve the issue:"
-#         read fixcmd
-
-#         if [[ -n "$fixcmd" ]]; then
-#             print_info "Running fix command: $fixcmd"
-#             eval "$fixcmd"
-#         fi
-
-#         echo "Retrying push..."
-#     fi
-# done
 #!/bin/zsh
 
 set -u
-
-# -----------------------------
-# Logging helpers
-# -----------------------------
 
 info() {
   echo "\n[INFO] $1"
@@ -135,9 +14,6 @@ success() {
   echo "\n[SUCCESS] $1"
 }
 
-# -----------------------------
-# Retry command wrapper
-# -----------------------------
 run_with_retry() {
     local cmd="$1"
     local output
@@ -194,9 +70,6 @@ run_with_retry() {
     done
 }
 
-# -----------------------------
-# Check Git installation
-# -----------------------------
 
 if ! command -v git >/dev/null 2>&1; then
   error "Git is not installed."
@@ -204,9 +77,6 @@ if ! command -v git >/dev/null 2>&1; then
   exit 1
 fi
 
-# -----------------------------
-# Initialize repository
-# -----------------------------
 
 if [[ ! -d ".git" ]]; then
   info "Initializing git repository..."
@@ -214,10 +84,6 @@ if [[ ! -d ".git" ]]; then
 else
   info "Git repository already initialized."
 fi
-
-# -----------------------------
-# Configure Git user if missing
-# -----------------------------
 
 git_user=$(git config user.name || true)
 git_email=$(git config user.email || true)
@@ -234,9 +100,6 @@ if [[ -z "$git_email" ]]; then
   run_with_retry "git config user.email \"$user_email\""
 fi
 
-# -----------------------------
-# Handle remote origin
-# -----------------------------
 
 if git remote get-url origin >/dev/null 2>&1; then
 
@@ -260,17 +123,12 @@ else
 
 fi
 
-# -----------------------------
-# Stage files
-# -----------------------------
+
 
 info "Adding files..."
 
 run_with_retry "git add ."
 
-# -----------------------------
-# Check if there are changes
-# -----------------------------
 
 if git diff --cached --quiet; then
   info "No changes to commit."
@@ -287,10 +145,6 @@ else
 
 fi
 
-# -----------------------------
-# Detect branch
-# -----------------------------
-
 branch=$(git branch --show-current 2>/dev/null)
 
 if [[ -z "$branch" ]]; then
@@ -302,17 +156,12 @@ if [[ -z "$branch" ]]; then
 
 fi
 
-# -----------------------------
-# Ensure upstream branch exists
-# -----------------------------
 
 if ! git ls-remote --heads origin "$branch" >/dev/null 2>&1; then
   info "Remote branch does not exist. Will create it."
 fi
 
-# -----------------------------
-# Push loop
-# -----------------------------
+
 while true; do
     print_info "Pushing to origin..."
 
